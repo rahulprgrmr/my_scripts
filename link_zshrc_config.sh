@@ -1,36 +1,51 @@
 #!/bin/bash
 
-# Paths
-SOURCE_DIR="$HOME/Personal/my_dotfiles/.config/zshrc"
-TARGET_DIR="$HOME/.config/zshrc"
+# Source paths (inside your dotfiles repo)
+DOTFILES_DIR="$HOME/Personal/my_dotfiles"
 
-# Check if source exists
-if [ ! -d "$SOURCE_DIR" ]; then
-  echo "❌ Source directory $SOURCE_DIR does not exist."
-  exit 1
-fi
+SOURCE_ZSHRC="$DOTFILES_DIR/.zshrc"
+SOURCE_CONFIG_DIR="$DOTFILES_DIR/.config/zshrc"
 
-# Check if target already exists
-if [ -e "$TARGET_DIR" ]; then
-  echo "⚠️ Target directory $TARGET_DIR already exists."
+# Target paths
+TARGET_ZSHRC="$HOME/.zshrc"
+TARGET_CONFIG_DIR="$HOME/.config/zshrc"
 
-  read -p "Do you want to remove it and continue? (y/n): " choice
-  case "$choice" in
-  y | Y)
-    echo "🗑️ Removing $TARGET_DIR"
-    rm -rf "$TARGET_DIR"
-    ;;
-  *)
-    echo "❌ Aborting. Please remove the target manually if needed."
-    exit 1
-    ;;
-  esac
-fi
+create_symlink() {
+  local source="$1"
+  local target="$2"
 
-# Create parent .config directory if missing
+  if [ ! -e "$source" ]; then
+    echo "❌ Source $source does not exist. Skipping."
+    return
+  fi
+
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    echo "⚠️ Target $target already exists."
+
+    read -p "Do you want to remove it and continue? (y/n): " choice
+    case "$choice" in
+    y | Y)
+      echo "🗑️ Removing $target"
+      rm -rf "$target"
+      ;;
+    *)
+      echo "❌ Skipping $target"
+      return
+      ;;
+    esac
+  fi
+
+  ln -s "$source" "$target"
+  echo "✅ Symlink created: $target -> $source"
+}
+
+echo "⚙️ Setting up Zsh configuration..."
+
+# Ensure ~/.config exists
 mkdir -p "$HOME/.config"
 
-# Create symlink
-ln -s "$SOURCE_DIR" "$TARGET_DIR"
+# Create symlinks
+create_symlink "$SOURCE_ZSHRC" "$TARGET_ZSHRC"
+create_symlink "$SOURCE_CONFIG_DIR" "$TARGET_CONFIG_DIR"
 
-echo "✅ Symlink created: $TARGET_DIR -> $SOURCE_DIR"
+echo "🎉 Zsh setup complete."
